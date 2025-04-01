@@ -1,0 +1,15 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "anyfs"
+authors = [{name = "Salvador Fandiño", email = "sfandino@yahoo.com"}]
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: GNU General Public License v3 (GPLv3)"]
+
+dynamic = ["description"]
+version = "0.0.1"
+
+[project.urls]
+Home = "http://github.com/salva/py-anyfs"
