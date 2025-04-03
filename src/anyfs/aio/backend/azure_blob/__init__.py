@@ -1,6 +1,8 @@
 import anyio
 import httpx
 
+from anyfs.aio.base import _ANode, _AFS
+
 from azure.identity.aio import DefaultAzureCredential
 
 class _AAzureBlobNode(_ANode):
@@ -27,7 +29,7 @@ class AAzureBlobFS(_AFS):
     def __init__(self,
                  identity=None,
                  account=None,
-                 container=None
+                 container=None,
                  host=None,
                  url=None,
                  cache_size=1000, cache_ttl=120):
@@ -40,23 +42,22 @@ class AAzureBlobFS(_AFS):
                 if account is None:
                     raise ValueError("url, host or account is required")
                 host = f"{account}.blob.core.windows.net"
-            url = f"https://{host}/"
+            if container is None:
+                raise ValueError("container is required")
+            url = f"https://{host}/{container}/"
         else:
             if not url.endswith("/"):
                 url += "/"
-        if container is not None:
-            url = urljoin(url, f"{container}/")
+            if container is not None:
+                url += container + "/"
         self._url = url
         self._container = container
         self._identity = identity
         self._client = httpx.AsyncClient()
 
-    async def root(self):
-        if self._container is None:
-            return await self._containers_node("/")
-        else:
-            return await self._node(self._root_path)
+    async def _before_make_node(self, path):
+        self._http_client.send('get', path)
+        return None
 
     async def _before_make_node(self, path):
-
-        return None
+        pass

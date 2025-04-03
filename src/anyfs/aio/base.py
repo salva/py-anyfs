@@ -140,25 +140,28 @@ class AFSWithHTTPClient(_AFS):
                  http_retry_max_attempts=default_http_retry_max_attempts,
                  http_retry_delay=default_http_retry_delay,
                  http_retry_delay_factor=default_http_retry_delay_factor,
-                 _http_transitory_codes=default_http_transitory_codes,
+                 http_transitory_codes=default_http_transitory_codes,
+                 httpx_auth=None,
                  **kwargs):
         super().__init__(*args, **kwargs)
         self._http_client = httpx.AsyncClient(base_url=base_url,
-                                              timeout=http_timeout)
+                                              timeout=http_timeout,
+                                              auth=httpx_auth)
         self._http_retry_max_attempts = http_retry_max_attempts
         self._http_retry_delay = http_retry_delay
         self._http_retry_delay_factor = http_retry_delay_factor
-        self._http_transitory_codes = _http_transitory_codes
-
+        self._http_transitory_codes = http_transitory_codes
 
     async def _auth_headers(self):
-        raise NotImplementedError("auth_headers")
+        return {}
 
-    async def _send(self, method, url, fspath=None, accepted_code=None, json=None, headers={}, authorize=True, **kwargs):
+    async def _send(self, method, url,
+                    params=None, json=None,
+                    fspath=None, accepted_code=None, headers={}, authorize=True, **kwargs):
         client = self._http_client
 
         if authorize:
-            auth_headers = await self->_auth_headers()
+            auth_headers = await self._auth_headers()
             headers = {**headers, **auth_headers}
 
         if "content" in kwargs:
@@ -177,7 +180,7 @@ class AFSWithHTTPClient(_AFS):
         while True:
             try:
                 res = await call(url, headers, **kwargs)
-            except: httpx.RequestError as ex:
+            except httpx.RequestError as ex:
                 logging.error(f"HTTP request {method} {url} failed, attempt: {attempt}", exc_info=ex)
                 if attempt >= http_retry_max_attempts:
                     raise_eio(fspath)
